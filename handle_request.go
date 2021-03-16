@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"io"
@@ -48,16 +47,16 @@ func (a AddrSpec) Address() string {
 	return net.JoinHostPort(a.Domain, strconv.Itoa(a.Port))
 }
 
-func handleRequest(bufConn *bufio.Reader, conn net.Conn) error {
+func handleRequest(conn net.Conn) error {
 	header := make([]byte, 3) // VER | CMD |  RSV
-	if _, err := io.ReadFull(bufConn, header); err != nil {
+	if _, err := io.ReadFull(conn, header); err != nil {
 		fmt.Printf("[ERR] socks: Failed to get NMETHODS byte: %v", err)
 		return err
 	}
 	if header[0] != socks5Version { // VER
 		return errors.New("[ERR] socks: Unsupported socks5 version")
 	}
-	dest, err := parseDestination(bufConn)
+	dest, err := parseDestination(conn)
 	fmt.Println(dest)
 	if err != nil {
 		if err == unrecognizedAddrType {
@@ -67,7 +66,7 @@ func handleRequest(bufConn *bufio.Reader, conn net.Conn) error {
 	}
 	switch header[1] { // CMD
 	case ConnectCommand:
-		return handleConnectCommand(bufConn, conn, dest)
+		return handleConnectCommand(conn, dest)
 	default:
 		_ = sendReply(conn, nil, commandNotSupported)
 		return fmt.Errorf("command not supported")
@@ -117,18 +116,18 @@ func sendReply(conn net.Conn, addr *AddrSpec, reply uint8) error {
 	return err
 }
 
-func parseDestination(bufConn *bufio.Reader) (AddrSpec, error) {
+func parseDestination(conn net.Conn) (AddrSpec, error) {
 	addrType := make([]byte, 1) // atyp
-	if _, err := io.ReadFull(bufConn, addrType); err != nil {
+	if _, err := io.ReadFull(conn, addrType); err != nil {
 		return AddrSpec{}, err
 	}
 	switch addrType[0] {
 	case ipv4Address:
 		address := make([]byte, net.IPv4len)
-		if _, err := io.ReadFull(bufConn, address); err != nil {
+		if _, err := io.ReadFull(conn, address); err != nil {
 			return AddrSpec{}, err
 		}
-		port, err := parsePort(bufConn)
+		port, err := parsePort(conn)
 		if err != nil {
 			return AddrSpec{IP: address}, unrecognizedAddrType
 		}
@@ -136,10 +135,10 @@ func parseDestination(bufConn *bufio.Reader) (AddrSpec, error) {
 
 	case ipv6Address:
 		address := make([]byte, net.IPv6len)
-		if _, err := io.ReadFull(bufConn, address); err != nil {
+		if _, err := io.ReadFull(conn, address); err != nil {
 			return AddrSpec{}, err
 		}
-		port, err := parsePort(bufConn)
+		port, err := parsePort(conn)
 		if err != nil {
 			return AddrSpec{IP: address}, unrecognizedAddrType
 		}
@@ -147,18 +146,18 @@ func parseDestination(bufConn *bufio.Reader) (AddrSpec, error) {
 
 	case domainAddress:
 		domainLength := make([]byte, 1)
-		if _, err := io.ReadFull(bufConn, domainLength); err != nil {
+		if _, err := io.ReadFull(conn, domainLength); err != nil {
 			return AddrSpec{}, err
 		}
 		domain := make([]byte, int(domainLength[0]))
-		if _, err := io.ReadFull(bufConn, domain); err != nil {
+		if _, err := io.ReadFull(conn, domain); err != nil {
 			return AddrSpec{}, err
 		}
 		ip, err := net.ResolveIPAddr("ip", string(domain))
 		if err != nil {
 			return AddrSpec{Domain: string(domain)}, unrecognizedAddrType
 		}
-		port, err := parsePort(bufConn)
+		port, err := parsePort(conn)
 		if err != nil {
 			return AddrSpec{Domain: string(domain), IP: ip.IP}, unrecognizedAddrType
 		}
@@ -168,9 +167,9 @@ func parseDestination(bufConn *bufio.Reader) (AddrSpec, error) {
 	}
 }
 
-func parsePort(bufConn *bufio.Reader) (int, error) {
+func parsePort(conn net.Conn) (int, error) {
 	port := make([]byte, 2)
-	if _, err := io.ReadFull(bufConn, port); err != nil {
+	if _, err := io.ReadFull(conn, port); err != nil {
 		return 0, err
 	}
 	return (int(port[0]) << 8) | int(port[1]), nil // this does some math shit to convert binary to decimal...somehow

@@ -1,14 +1,13 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"net"
 	"strings"
 )
 
-func handleConnectCommand(bufConn *bufio.Reader, conn net.Conn, dest AddrSpec) error {
+func handleConnectCommand(conn net.Conn, dest AddrSpec) error {
 	target, err := net.Dial("tcp", dest.Address())
 	if err != nil {
 		msg := err.Error()
