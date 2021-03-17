@@ -21,9 +21,9 @@ func handleConnectCommand(conn net.Conn, dest AddrSpec) error {
 		return err
 	}
 	defer target.Close()
-	local := target.LocalAddr().(*net.TCPAddr)
-	bind := AddrSpec{IP: local.IP, Port: local.Port}
-	if err := sendReply(conn, &bind, successReply); err != nil {
+	// local := target.LocalAddr().(*net.TCPAddr)
+	// bind := AddrSpec{IP: local.IP, Port: local.Port}
+	if err := sendReply(conn, &AddrSpec{IP: []byte{0, 0, 0, 0}}, successReply); err != nil { // the spec says we are supposed to send the BND ip and port but it works without it
 		return fmt.Errorf("failed to send reply: %v", err)
 	}
 	errCh := make(chan error, 2)
@@ -40,8 +40,6 @@ func handleConnectCommand(conn net.Conn, dest AddrSpec) error {
 	return nil
 }
 
-// proxy is used to shuffle data from src to destination, and sends errors
-// down a dedicated channel
 func proxy(dst io.Writer, src io.Reader, errCh chan error) {
 	_, err := io.Copy(dst, src)
 	errCh <- err
