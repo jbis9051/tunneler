@@ -1,3 +1,3 @@
-module tunneler_server
+module tunneler
 
 go 1.13
