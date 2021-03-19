@@ -1,31 +1,34 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
+	"log"
 	"net"
 )
 
-const socks5Version = byte(5)
-
-func main() {
-	address := ":8080"
-	listener, err := net.Listen("tcp", address)
+func start(address string) (net.Listener, error) {
+	cer, err := tls.LoadX509KeyPair("cert.pem", "key.pem")
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
+		return nil, err
+	}
+	listener, err := tls.Listen("tcp", address, &tls.Config{Certificates: []tls.Certificate{cer}})
+	if err != nil {
+		return nil, err
 	}
 	defer func() {
 		err := listener.Close()
 		if err != nil {
 			fmt.Println(err)
-			return
 		}
 	}()
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			fmt.Println(err)
-			return
+			return nil, err
 		}
+
 		go func(conn net.Conn) {
 			defer conn.Close()
 			err := handleConnection(conn)

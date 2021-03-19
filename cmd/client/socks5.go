@@ -6,35 +6,7 @@ import (
 	"net"
 )
 
-func start(address string) (net.Listener, error) {
-	listener, err := net.Listen("tcp", address)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		err := listener.Close()
-		if err != nil {
-			fmt.Println(err)
-		}
-	}()
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			return nil, err
-		}
-		go handleConnection(conn)
-	}
-}
-
-func handleConnection(conn net.Conn) {
-	defer conn.Close()
-	err := handleSocksProtocol(conn)
-	if err != nil {
-		fmt.Printf("[ERR] connection failed: %v\n", err)
-	}
-}
-
-func handleSocksProtocol(conn net.Conn) error {
+func handleConnection(conn net.Conn) error {
 	version := make([]byte, 1)
 	if _, err := conn.Read(version); err != nil {
 		return fmt.Errorf("failed to get version byte: %v", err)
