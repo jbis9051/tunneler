@@ -23,11 +23,35 @@ type AddrSpec struct {
 	Port   int
 }
 
-func (a AddrSpec) Address() string {
-	if 0 != len(a.IP) {
-		return net.JoinHostPort(a.IP.String(), strconv.Itoa(a.Port))
+type AddrSpecParts struct {
+	AddrType uint8
+	AddrBody []byte
+	AddrPort uint16
+}
+
+func (addr AddrSpec) Address() string {
+	if len(addr.IP) != 0 {
+		return net.JoinHostPort(addr.IP.String(), strconv.Itoa(addr.Port))
 	}
-	return net.JoinHostPort(a.Domain, strconv.Itoa(a.Port))
+	return net.JoinHostPort(addr.Domain, strconv.Itoa(addr.Port))
+}
+
+func (addr *AddrSpec) ToParts() (AddrSpecParts, error) {
+	switch {
+	case addr == nil:
+		return AddrSpecParts{AddrType: Ipv4Address, AddrBody: []byte{0, 0, 0, 0}, AddrPort: 0}, nil
+	case addr.Domain != "":
+		return AddrSpecParts{AddrType: DomainAddress, AddrBody: append([]byte{byte(len(addr.Domain))}, []byte(addr.Domain)...), AddrPort: uint16(addr.Port)}, nil
+
+	case addr.IP.To4() != nil:
+		return AddrSpecParts{AddrType: Ipv4Address, AddrBody: addr.IP.To4(), AddrPort: uint16(addr.Port)}, nil
+
+	case addr.IP.To16() != nil:
+		return AddrSpecParts{AddrType: Ipv6Address, AddrBody: addr.IP.To16(), AddrPort: uint16(addr.Port)}, nil
+
+	default:
+		return AddrSpecParts{}, fmt.Errorf("failed to format address: %v", addr)
+	}
 }
 
 func ParseDestination(conn net.Conn) (AddrSpec, error) {

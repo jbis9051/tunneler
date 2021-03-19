@@ -4,24 +4,27 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"strings"
 	"tunneler/cmd/internal"
 )
 
-func handleConnectCommand(conn net.Conn, dest internal.AddrSpec) error {
-	target, err := net.Dial("tcp", dest.Address())
+func handleConnectCommand(conn net.Conn, dest internal.AddrSpec, tunnelerAddr string) error {
+	target, err := tunnelDial(&dest, tunnelerAddr)
 	if err != nil {
-		msg := err.Error()
-		resp := hostUnreachable
-		if strings.Contains(msg, "refused") {
-			resp = connectionRefused
-		} else if strings.Contains(msg, "network is unreachable") {
-			resp = networkUnreachable
-		}
-		_ = sendReply(conn, nil, resp)
 		return err
 	}
 	defer target.Close()
+	status := make([]byte, 1)
+	if _, err := io.ReadFull(target, status); err != nil {
+		return err
+	}
+	if status[0] != internal.SuccessResponse {
+		if status[0] == internal.AddrTypeNotSupportedResponse {
+			_ = sendReply(conn, nil, addrTypeNotSupported)
+			return fmt.Errorf("tunnler reported address type not supported error")
+		}
+		_ = sendReply(conn, nil, serverFailure)
+		return fmt.Errorf("tunnler reported unkown error")
+	}
 	// local := target.LocalAddr().(*net.TCPAddr)
 	// bind := AddrSpec{IP: local.IP, Port: local.Port}
 	if err := sendReply(conn, &internal.AddrSpec{IP: []byte{0, 0, 0, 0}}, successReply); err != nil { // the spec says we are supposed to send the BND ip and port but it works without it

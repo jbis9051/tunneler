@@ -12,7 +12,7 @@ func handleConnection(conn net.Conn) error {
 	if _, err := io.ReadFull(conn, version); err != nil {
 		return fmt.Errorf("failed to read version byte: %v", err)
 	}
-	if version[0] != tunnelerVersion {
+	if version[0] != internal.TunnelerVersion {
 		return fmt.Errorf("invalid version")
 	}
 	dest, err := internal.ParseDestination(conn)
@@ -22,6 +22,7 @@ func handleConnection(conn net.Conn) error {
 		}
 		return err
 	}
+	fmt.Printf("%v\n", dest)
 	target, err := net.Dial("tcp", dest.Address())
 	if err != nil {
 		_, _ = conn.Write([]byte{internal.ConnectionErrorResponse})

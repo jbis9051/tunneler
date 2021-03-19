@@ -6,7 +6,7 @@ import (
 	"net"
 )
 
-func handleConnection(conn net.Conn) error {
+func handleConnection(conn net.Conn, tunnelerAddr string) error {
 	version := make([]byte, 1)
 	if _, err := conn.Read(version); err != nil {
 		return fmt.Errorf("failed to get version byte: %v", err)
@@ -25,7 +25,7 @@ func handleConnection(conn net.Conn) error {
 	}
 	conn.Write([]byte{socks5Version, byte(0)})
 
-	err = handleRequest(conn)
+	err = handleRequest(conn, tunnelerAddr)
 	if err != nil {
 		return fmt.Errorf("failed to handle request: %v", err)
 	}
