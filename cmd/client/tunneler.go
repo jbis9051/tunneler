@@ -3,7 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"net"
-	"tunneler/cmd/internal"
+	"tunneler/internal"
 )
 
 func tunnelDial(dest *internal.AddrSpec, tunnelerAddr string) (net.Conn, error) {

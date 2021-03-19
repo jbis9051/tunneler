@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"tunneler/cmd/internal"
+	"tunneler/internal"
 )
 
 func handleConnection(conn net.Conn) error {

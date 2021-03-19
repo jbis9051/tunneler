@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"tunneler/cmd/internal"
+	"tunneler/internal"
 )
 
 func handleConnectCommand(conn net.Conn, dest internal.AddrSpec, tunnelerAddr string) error {

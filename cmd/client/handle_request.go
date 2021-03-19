@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"tunneler/cmd/internal"
+	"tunneler/internal"
 )
 
 const (
