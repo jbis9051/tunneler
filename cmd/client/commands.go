@@ -22,6 +22,10 @@ func handleConnectCommand(conn net.Conn, dest internal.AddrSpec, tunnelerAddr st
 			_ = sendReply(conn, nil, addrTypeNotSupported)
 			return fmt.Errorf("tunnler reported address type not supported error")
 		}
+		if status[0] == internal.RuleFailureResponse {
+			_ = sendReply(conn, nil, ruleFailure)
+			return fmt.Errorf("tunnler reported rule failure")
+		}
 		_ = sendReply(conn, nil, serverFailure)
 		return fmt.Errorf("tunnler reported unkown error")
 	}

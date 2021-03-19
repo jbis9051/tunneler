@@ -22,6 +22,10 @@ func handleConnection(conn net.Conn) error {
 		}
 		return err
 	}
+	if isPrivate, _ := isPrivateIP(dest.IP); isPrivate {
+		_, _ = conn.Write([]byte{internal.RuleFailureResponse})
+		return fmt.Errorf("rule failer: private ip")
+	}
 	fmt.Printf("%v\n", dest)
 	target, err := net.Dial("tcp", dest.Address())
 	if err != nil {
