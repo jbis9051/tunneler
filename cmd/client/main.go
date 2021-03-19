@@ -3,13 +3,20 @@ package main
 import (
 	"fmt"
 	"net"
+	"os"
 )
 
 const socks5Version = byte(5)
 
 func main() {
-	address := ":8080"
-	tunnelerAddr := "192.168.1.186:8081"
+	args := os.Args[1:]
+	if len(args) < 2 {
+		fmt.Println("listen address and tunnel address required")
+		return
+	}
+
+	address := args[0]
+	tunnelerAddr := args[1]
 
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
