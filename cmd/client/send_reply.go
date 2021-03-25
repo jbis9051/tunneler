@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"net"
 	"tunneler/internal"
 )
@@ -18,9 +19,9 @@ func sendReply(conn net.Conn, addr *internal.AddrSpec, reply uint8) error {
 	msg[2] = 0 // Reserved
 	msg[3] = addrSpecParts.AddrType
 	copy(msg[4:], addrSpecParts.AddrBody)
-	msg[4+len(addrSpecParts.AddrBody)] = byte(addrSpecParts.AddrPort >> 8)
-	msg[4+len(addrSpecParts.AddrBody)+1] = byte(addrSpecParts.AddrPort & 0xff)
-
+	portBytes := make([]byte, 2)
+	binary.BigEndian.PutUint16(portBytes, addrSpecParts.AddrPort)
+	copy(msg[4+len(addrSpecParts.AddrBody):], portBytes)
 	_, err = conn.Write(msg)
 	return err
 }

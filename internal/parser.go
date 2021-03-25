@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"encoding/binary"
 	"fmt"
 	"io"
 	"net"
@@ -20,7 +21,7 @@ var (
 type AddrSpec struct {
 	Domain string
 	IP     net.IP
-	Port   int
+	Port   uint16
 }
 
 type AddrSpecParts struct {
@@ -31,9 +32,9 @@ type AddrSpecParts struct {
 
 func (addr AddrSpec) Address() string {
 	if len(addr.IP) != 0 {
-		return net.JoinHostPort(addr.IP.String(), strconv.Itoa(addr.Port))
+		return net.JoinHostPort(addr.IP.String(), strconv.Itoa(int(addr.Port)))
 	}
-	return net.JoinHostPort(addr.Domain, strconv.Itoa(addr.Port))
+	return net.JoinHostPort(addr.Domain, strconv.Itoa(int(addr.Port)))
 }
 
 func (addr *AddrSpec) ToParts() (AddrSpecParts, error) {
@@ -105,10 +106,10 @@ func ParseDestination(conn net.Conn) (AddrSpec, error) {
 	}
 }
 
-func parsePort(conn net.Conn) (int, error) {
+func parsePort(conn net.Conn) (uint16, error) {
 	port := make([]byte, 2)
 	if _, err := io.ReadFull(conn, port); err != nil {
 		return 0, err
 	}
-	return (int(port[0]) << 8) | int(port[1]), nil // this does some math shit to convert binary to decimal...somehow
+	return binary.BigEndian.Uint16(port), nil
 }

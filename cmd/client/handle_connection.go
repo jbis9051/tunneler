@@ -12,7 +12,7 @@ func handleConnection(conn net.Conn, tunnelerAddr string) error {
 		return fmt.Errorf("failed to get version byte: %v", err)
 	}
 	if version[0] != socks5Version {
-		return fmt.Errorf("unsupported socks5 version")
+		return fmt.Errorf("unsupported socks5 version: %v", version[0])
 	}
 	authenticated, err := authenticate(conn)
 	if err != nil {
